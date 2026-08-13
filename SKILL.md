@@ -59,7 +59,7 @@ python scripts/explore.py /absolute/path/to/meme.jpg --prompt-file /absolute/pat
 
 If `explore.py` cannot run, stop. Do not substitute another generator.
 
-## Failures that already happened
+## Common mistakes
 
 | Excuse | Reality |
 |---|---|

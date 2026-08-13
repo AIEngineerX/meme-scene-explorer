@@ -1,29 +1,26 @@
 # Meme Scene Explorer
 
-Turn one meme still into a 15-second cinematic restage.
+Turn one meme still into a 15-second cinematic film.
 
 The still is the only evidence. The subject stays frozen. Only the camera moves.
 
-This package makes **[Alex Patrascu’s (@maxescu) method](https://x.com/maxescu/status/2087592524940452149)** repeatable on [Higgsfield](https://higgsfield.ai) **Seedance 2.5**.
+This repo packages [Alex Patrascu (@maxescu)'s method](https://x.com/maxescu/status/2087592524940452149) for [Higgsfield](https://higgsfield.ai) **Seedance 2.5**. Humans run a Python script. Any coding agent that can read a file and run a shell command can run the same script. No vendor-specific APIs.
 
-It is **agent-agnostic**. Humans run a Python script. Any coding agent that can read `SKILL.md` / `AGENTS.md` and execute a shell command can run the same path. No Grok, Claude, or Codex APIs are required.
+Seedance has no seed. The same image and prompt will not produce identical pixels. What this repo locks is the **method**: model, flags, prompt shape, and the rule that the original still is never redrawn by another image model.
 
-It does **not** make Seedance output the same pixels twice. There is no seed. What is locked: model, flags, prompt contract, and the rule that the original still is never redrawn by a stills model.
+## Requirements
 
-## What you need
-
-1. A Higgsfield account with credits (Seedance 2.5 is a paid generate)
-2. The [Higgsfield CLI](https://github.com/higgsfield-ai/cli)
-3. One meme image (jpg / png / webp)
-4. Python 3.9+ (stdlib only)
+- A [Higgsfield](https://higgsfield.ai) account with credits (Seedance 2.5 is paid)
+- The [Higgsfield CLI](https://github.com/higgsfield-ai/cli)
+- Python 3.9+ (standard library only)
+- One meme image (`.jpg`, `.png`, or `.webp`)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh
 higgsfield auth login
-higgsfield account status
 ```
 
-## Quick start (no agent)
+## Run
 
 ```bash
 git clone https://github.com/AIEngineerX/meme-scene-explorer.git
@@ -32,67 +29,47 @@ cd meme-scene-explorer
 python scripts/explore.py path/to/meme.jpg --out ~/Videos
 ```
 
-Better — fill 15 stages from the still, then:
+That sends a generic 15-stage skeleton. Seedance reads the still and fills the beats.
+
+For a better film, write stages from the actual details in the still (see `examples/filled-prompt.puppy.txt` for the shape), then:
 
 ```bash
 python scripts/explore.py path/to/meme.jpg \
-  --prompt-file examples/filled-prompt.puppy.txt \
+  --prompt-file path/to/your-stages.txt \
   --out ~/Videos
 ```
 
-`examples/filled-prompt.puppy.txt` is a worked example. Use it as the *shape*, not as the prompt for a different meme.
-
-### Flags
-
 | Flag | Default | Meaning |
 |---|---|---|
-| `--prompt-file` | skeleton | Your filled 15-stage prompt |
-| `--world` | auto | Setting injected into the skeleton |
-| `--out` | `.` | Where to save the mp4 |
+| `--prompt-file` | `examples/skeleton.txt` | Your filled 15-stage prompt |
+| `--world` | a matching real place | Setting used by the skeleton |
+| `--out` | current directory | Where the `.mp4` is saved |
 | `--aspect` | `21:9` | Closest Higgsfield value to Alexa 2.39:1 |
 | `--resolution` | `720p` | `480p` or `720p` |
-| `--no-download` | off | Print the URL only |
+| `--no-download` | off | Print the result URL only |
 
-## Install for any coding agent
-
-From the repo:
+## Use with a coding agent
 
 ```bash
 python scripts/install.py
 ```
 
-That links this folder into every skills directory that already exists on the machine:
+That links this folder into every skills directory already on the machine (`~/.agents/skills`, `~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, `~/.gemini/skills`, `~/.grok/skills`, and others if present).
 
-| Path | Typical host |
-|---|---|
-| `~/.agents/skills/` | Cross-runtime (Claude, Codex, Gemini, Copilot) |
-| `~/.claude/skills/` | Claude Code |
-| `~/.codex/skills/` | Codex CLI |
-| `~/.cursor/skills/` | Cursor |
-| `~/.gemini/skills/` | Gemini CLI |
-| `~/.grok/skills/` | Grok |
-| `~/.github/skills/` | Copilot CLI |
-| `~/.config/opencode/skills/` | OpenCode |
-| `~/.windsurf/skills/` | Windsurf |
-
-To vendor it into a project so any agent opened on that repo sees it:
+To vendor it into another project:
 
 ```bash
 python scripts/install.py --project /path/to/your/app
 ```
 
-That writes `.agents/skills/meme-scene-explorer`. Opening the folder is enough — `AGENTS.md` at the repo root tells the agent what to do.
-
-Then: attach a still and say **explore this meme**.
+Then attach a still and say **explore this meme**. Agents should follow `AGENTS.md` and generate only through `scripts/explore.py`.
 
 ## How it works
 
-1. The meme still is passed as the only image reference (`omni_reference`).
-2. The prompt restages that **same** subject in one real place.
-3. 15 one-second stages: ECU of the defining detail → subject details → world → snap back to the original framing.
+1. The meme still is the only image reference (`omni_reference`).
+2. The prompt restages that same subject in one real place.
+3. Fifteen one-second stages: close-up of the defining detail → the subject → the world → snap back to the original framing.
 4. Diegetic sound only. No music. No original JPEG, captions, or UI.
-
-Locked generate (also what `scripts/explore.py` runs):
 
 ```text
 higgsfield generate create seedance_2_5
@@ -106,22 +83,30 @@ higgsfield generate create seedance_2_5
 
 Full contract: [`references/prompt-contract.md`](references/prompt-contract.md).
 
-## Agent contract
+## What's in this repo
 
-If you are an agent, read [`AGENTS.md`](AGENTS.md) and [`SKILL.md`](SKILL.md).
+```text
+AGENTS.md                         instructions for any coding agent
+SKILL.md                          skill entry (name + when to load)
+LICENSE                           MIT
+scripts/explore.py                generate a video
+scripts/install.py                install the skill for local agents
+references/prompt-contract.md     locked flags and prompt rules
+examples/skeleton.txt             default prompt (used when you pass no --prompt-file)
+examples/filled-prompt.puppy.txt  one worked 15-stage prompt (shape only)
+agents/openai.yaml                Codex discovery stub
+```
 
-- Generate only via `python scripts/explore.py`
-- Do not call the host image/video tools
-- Stop if there is no still or Higgsfield is not logged in
+## What not to do
 
-## Why the first naive version fails
-
-Regenerating the face with an image model, then Ken-burning 15 stills, produces a prettier *different* character. That is not this method. If Higgsfield is down, stop. Do not fake the film.
+- Do not redraw the subject in another image or video model, then animate those stills.
+- Do not pass the original JPEG as `--start-image`. That keeps the upload, captions, and compression.
+- Do not send a generic list of camera moves. Name details that exist on *this* still.
+- If Higgsfield is unavailable, stop. Do not fake the film.
 
 ## Credit
 
-- Method: [Alex Patrascu (@maxescu) — Meme Scene Explorer](https://x.com/maxescu/status/2087592524940452149)
-- Runtime: Higgsfield Seedance 2.5
+Method: [Alex Patrascu (@maxescu)](https://x.com/maxescu/status/2087592524940452149). Runtime: Higgsfield Seedance 2.5.
 
 ## License
 

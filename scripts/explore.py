@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import re
 import shutil
 import subprocess
@@ -13,31 +12,10 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "references" / "prompt-contract.md"
+SKELETON_PATH = ROOT / "examples" / "skeleton.txt"
 DEFAULT_WORLD = "a complete believable physical location that matches and elevates the meme's energy"
 URL_RE = re.compile(r"https://[^\s]+?\.(?:mp4|mov|webm)(?:\?[^\s]*)?", re.I)
 ANY_URL_RE = re.compile(r"https://[^\s]+")
-
-SKELETON = """meme_reference corresponds to the attached reference image. Use it as the sole semantic and visual evidence for the subject(s). Carefully extract appearance, clothing or markings, exact pose, facial expression, composition, and the core meaning of the meme.
-
-Re-stage those exact elements inside a complete, believable physical world: {world}. Elevate the meme's energy and tone. The subject(s) in every frame must be the same beings from meme_reference — same face, body, clothes, dirt, and pose. Do not replace them with cleaner or generic lookalikes.
-
-Do not show the original uploaded image, screenshots, borders, captions, watermarks, website UI, typography, or compression artifacts.
-
-Technical base: Arri Alexa 65, anamorphic 2.39:1, 35mm Kodak 5219, fine grain, hyper-realistic, no music, diegetic sound only. Subjects stay almost completely frozen. Only the camera moves.
-
-Write and execute exactly 15 one-second stages derived from THIS still:
-
-[Stage 1] 0-1s. Initial state: the main subject(s) from meme_reference stand perfectly still in the new environment, locked in their iconic pose and expression. Primary event: extreme close-up on the single most defining detail of the pose or expression. End state: hyper-detailed view of that detail.
-
-[Stage 2] through [Stage 14]. Continue from the previous stage. Subjects remain frozen. Each stage introduces a new cinematic camera move aimed at a real detail that exists on THIS subject or in THIS world (skin, fabric, a held object, a mark, a reflection, a texture, then the environment). Progressively reveal the character, then the place, then move around the static subject.
-
-[Stage 15] 14-15s. Continue from the previous stage. Primary event: camera snaps back to a perfectly centered, steady master composition that matches the original framing and feeling of meme_reference. End state: iconic final frame.
-
-Keep character identity, clothing, exact pose, expression, and the chosen environment 100% consistent across all 15 stages.
-
-<quiet diegetic ambience that fits the chosen environment>
-"""
 
 
 def die(msg: str, code: int = 1) -> None:
@@ -78,8 +56,10 @@ def load_prompt(args: argparse.Namespace) -> str:
         if not path.is_file():
             die(f"prompt file not found: {path}")
         return path.read_text(encoding="utf-8").strip()
+    if not SKELETON_PATH.is_file():
+        die(f"skeleton missing: {SKELETON_PATH}")
     world = (args.world or DEFAULT_WORLD).strip()
-    return SKELETON.format(world=world).strip()
+    return SKELETON_PATH.read_text(encoding="utf-8").format(world=world).strip()
 
 
 def run_job(hf: str, image: Path, prompt: str, args: argparse.Namespace) -> str:
