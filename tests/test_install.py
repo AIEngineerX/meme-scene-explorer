@@ -53,8 +53,12 @@ class LinkOrCopy(unittest.TestCase):
         make_link(old, self.dest)
         shutil.rmtree(old)
         self.assertFalse(self.dest.exists())
-        self.assertFalse(self.dest.is_symlink())
         self.assertTrue(os.path.lexists(self.dest))
+        if os.name == "nt":
+            # A dangling junction is not a symlink to Python. That is the exact
+            # trap the old `exists() or is_symlink()` guard fell into. A dangling
+            # POSIX symlink, by contrast, still reports is_symlink() == True.
+            self.assertFalse(self.dest.is_symlink())
 
         kind = install.link_or_copy(self.src, self.dest)
         self.assertIn(kind, ("junction", "symlink", "copy"))
