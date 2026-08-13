@@ -23,6 +23,8 @@ metadata:
 
 Turn one meme still into a 15-second cinematic restage. The still is evidence, not a style hint. The subject stays frozen. Only the camera moves.
 
+Why that rule: video models drift, and a face given room to animate is quietly rebuilt more generically every second. Freezing the subject removes the thing that drifts and spends all 15 seconds on camera movement, which cannot alter identity. `omni_reference` does the other half — it tells Seedance the still is evidence of *who this is*, not a first frame to animate away from.
+
 Method from [Alex Patrascu (@maxescu)](https://x.com/maxescu/status/2087592524940452149), run on Higgsfield Seedance 2.5.
 
 This skill is runtime-neutral. Use the bundled script. Do not call the host agent's image or video tools.

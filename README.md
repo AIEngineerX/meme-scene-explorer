@@ -4,9 +4,40 @@ Turn one meme still into a 15-second cinematic film.
 
 The still is the only evidence. The subject stays frozen. Only the camera moves.
 
+![Six frames from one 15-second run](examples/example-frames.jpg)
+
+Six frames from a real run, in order. Extreme close-up of the defining detail, out to the clothes, out to the subject in the world, wide to the street, back to a texture, then a hard snap to a centered master that matches the original meme framing. The character does not move and is not redrawn in any of them — every change is the camera.
+
 This repo packages [Alex Patrascu (@maxescu)'s method](https://x.com/maxescu/status/2087592524940452149) for [Higgsfield](https://higgsfield.ai) **Seedance 2.5**. Humans run a Python script. Any coding agent that can read a file and run a shell command can run the same script. No vendor-specific APIs.
 
 Seedance has no seed. The same image and prompt will not produce identical pixels. What this repo locks is the **method**: model, flags, prompt shape, and the rule that the original still is never redrawn by another image model.
+
+## Why the subject has to stay frozen
+
+This is the whole trick, so it is worth stating plainly. Video models drift. Give one room to animate a face and it will quietly rebuild that face a little more generically with every second — the meme survives the first shot and is gone by the tenth.
+
+Freezing the subject removes the thing that drifts. All fifteen seconds of change are spent on camera movement, which the model is good at and which cannot alter identity. That is why "only the camera moves" is a hard rule and not a stylistic preference: it is what makes the character in second 15 the same character as in second 1.
+
+`omni_reference` is the other half. It tells Seedance the attached still is *evidence of who this is*, not a first frame to animate away from. Passing the same JPEG as `--start-image` would animate the picture — watermarks, captions, compression and all. That is why it is forbidden here.
+
+## Vocabulary
+
+| Term | Meaning |
+|---|---|
+| **Seedance 2.5** | The video model this runs on, hosted by Higgsfield. Paid, no seed. |
+| **`omni_reference`** | Seedance mode where a reference image supplies *identity*, not a starting frame. The one mode this method uses. |
+| **`meme_reference`** | The name the prompt gives your still so later lines can point back at it. |
+| **Diegetic sound** | Sound that exists inside the scene — wind, traffic, fabric. No score, no music. |
+| **Stage** | One of the fifteen one-second beats. Each names a camera move toward a real detail. |
+
+## Which file do I read?
+
+| You are | Read |
+|---|---|
+| A person running this yourself | This README |
+| A coding agent | [`AGENTS.md`](AGENTS.md) — then [`SKILL.md`](SKILL.md) |
+| Changing what gets sent to Seedance | [`references/prompt-contract.md`](references/prompt-contract.md) — the spec |
+| Writing your own 15 stages | [`examples/filled-prompt.puppy.txt`](examples/filled-prompt.puppy.txt) — copy the shape, not the content |
 
 ## Requirements
 
@@ -56,7 +87,7 @@ python3 scripts/explore.py path/to/meme.jpg \
 | `--out` | current directory | Where the `.mp4` is saved |
 | `--duration` | `15` | Seconds. The contract assumes 15. |
 | `--aspect` | `21:9` | Closest Higgsfield value to Alexa 2.39:1 |
-| `--resolution` | `720p` | `480p` or `720p` |
+| `--resolution` | `720p` | `480p` or `720p`. A quality tier, not a line count — at 21:9, `720p` delivers 1470×630. |
 | `--wait-timeout` | `20m` | How long to wait for the job |
 | `--no-download` | off | Print the result URL only |
 
@@ -103,6 +134,22 @@ higgsfield generate create seedance_2_5
 
 Full contract: [`references/prompt-contract.md`](references/prompt-contract.md).
 
+## Verified
+
+Every number on this page comes from real completed runs on Seedance 2.5, not from estimates:
+
+| Claim | How it was checked |
+|---|---|
+| 15 one-second stages | Submitted prompt carried exactly 15 `[Stage` markers |
+| 15-second film | Delivered file is 15.04s at 24fps |
+| 21:9 | Delivered file is 1470×630 — 2.333:1, the closest enum to Alexa's 2.39:1 |
+| Diegetic audio | Delivered file carries an AAC stereo track |
+| ~97.5 credits per run | Balance moved 109 → 11.5 across one run |
+| Result is an `.mp4` | Result URLs end in `.mp4`; the frames above were pulled from one |
+| Identity holds for 15s | See the contact sheet — same character in frame 1 and frame 6 |
+
+The locked flags are checked against `higgsfield model get seedance_2_5` by the test suite, so a change on Higgsfield's side fails CI rather than a paid job.
+
 ## What's in this repo
 
 ```text
@@ -114,6 +161,7 @@ scripts/install.py                install the skill for local agents
 references/prompt-contract.md     locked flags and prompt rules
 examples/skeleton.txt             default prompt (used when you pass no --prompt-file)
 examples/filled-prompt.puppy.txt  one worked 15-stage prompt (shape only)
+examples/example-frames.jpg       six frames from a real run
 agents/openai.yaml                Codex discovery stub
 tests/                            unittest suite
 ```
