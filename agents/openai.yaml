@@ -1,0 +1,4 @@
+interface:
+  display_name: "Meme Scene Explorer"
+  short_description: "Restage a meme still as a 15s Seedance film"
+  default_prompt: "Use $meme-scene-explorer. Read SKILL.md. Run scripts/explore.py. Do not use host image or video tools."

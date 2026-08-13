@@ -1,0 +1,39 @@
+meme_reference corresponds to the attached reference image. Use it as the sole semantic and visual evidence for the subject. The puppy must remain the exact same animal: a very young dirty cream backyard puppy, close-set dark wet eyes, broad scruffy muzzle with grit around a wet black nose, pointed fluffy ears, thin chest fur with a pink skin patch, grimy front paws, held upright by a human hand under the chest so the hind legs dangle and do not stand on the ground. Keep that exact face, coat, dirt, eye shape, and held pose in every frame.
+
+Re-stage those exact elements inside a complete, believable physical farmyard at late golden hour: packed dirt, dry grass, weathered wood, distant hills, warm low sun, airborne dust. Elevate the world, never replace the puppy. Do not show the original uploaded JPEG, screenshots, borders, captions, watermarks, website UI, typography, plastic garden chair, or compression artifacts.
+
+Technical base: Arri Alexa 65, anamorphic 2.39:1, 35mm Kodak 5219, fine grain, hyper-realistic, no music, diegetic sound only. The puppy stays almost completely frozen. Only the camera moves.
+
+[Stage 1] 0-1s. Initial state: the puppy from meme_reference is held perfectly still in the new farmyard, locked in the iconic upright pose. Primary event: extreme close-up on the wet black nose and the dirt in the cream fur around the nostrils. End state: hyper-detailed view of that grit and moisture.
+
+[Stage 2] 1-2s. Continue from the previous stage. The puppy remains frozen. Primary event: camera pulls back to a tight close-up of both huge dark wet eyes and the worried innocent stare. End state: symmetric close-up of the gaze.
+
+[Stage 3] 2-3s. Continue. Pose unchanged. Primary event: camera pulls back to the full face, dirty muzzle, closed mouth, pointed ears. End state: complete face filling the frame.
+
+[Stage 4] 3-4s. Continue. Pose unchanged. Primary event: camera tilts down to the splayed dirty front paws hanging in the air, not touching the ground. End state: both grimy paws sharp in frame.
+
+[Stage 5] 4-5s. Continue. Pose unchanged. Primary event: camera moves to the supporting human hand under the chest, fingers pressing into cream fur. End state: hand and chest contact in sharp focus.
+
+[Stage 6] 5-6s. Continue. Pose unchanged. Primary event: camera finds the pink skin patch on the thin chest fur. End state: that patch and belly fur fill the frame.
+
+[Stage 7] 6-7s. Continue. Still held, not standing. Primary event: low-angle shot looking up at the held puppy against the golden sky. End state: heroic low angle with dangling hind legs visible.
+
+[Stage 8] 7-8s. Continue. Frozen. Primary event: camera orbits 45 degrees to the right, revealing the side of the held body, dangling hind legs, and a scrap of khaki fabric on the holder. End state: three-quarter side view of the iconic hold.
+
+[Stage 9] 8-9s. Continue. Frozen. Primary event: focus pulls from the puppy to the dusty farmyard behind: dirt road, dry grass, weathered posts, distant hills. End state: environment sharp, puppy softly in the foreground.
+
+[Stage 10] 9-10s. Continue. Frozen. Primary event: extreme close-up of one dirty paw, pads and cream fur texture. End state: micro-detail of the paw.
+
+[Stage 11] 10-11s. Continue. Frozen. Primary event: wide shot from down the dirt track, the tiny held puppy in the lower third, ranch and hills dominating. End state: environmental establishing shot.
+
+[Stage 12] 11-12s. Continue. Frozen. Primary event: fast lateral track left to right around the still-held puppy, passing a fence post. End state: dynamic move around the static subject.
+
+[Stage 13] 12-13s. Continue. Frozen. Primary event: extreme close-up of a dirty cream ear, fine hair and dust. End state: abstract fur texture.
+
+[Stage 14] 13-14s. Continue. Frozen. Primary event: medium three-quarter view, still held upright, same face and expression. End state: three-quarter master.
+
+[Stage 15] 14-15s. Continue. Frozen. Primary event: camera snaps back to a perfectly centered, steady frontal composition matching the original meme_reference framing: puppy held to camera, paws out, face on. End state: iconic final frame.
+
+Keep identity, dirty cream coat, exact held pose, expression, hand support, and the farmyard 100 percent consistent across all 15 stages.
+
+<dry wind over dirt and grass, distant rural hush, faint rustle of the holder's clothes>
