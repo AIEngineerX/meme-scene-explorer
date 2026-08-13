@@ -8,14 +8,22 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
+import urllib.error
 import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKELETON_PATH = ROOT / "examples" / "skeleton.txt"
+WORLD_TOKEN = "{world}"
 DEFAULT_WORLD = "a complete believable physical location that matches and elevates the meme's energy"
-URL_RE = re.compile(r"https://[^\s]+?\.(?:mp4|mov|webm)(?:\?[^\s]*)?", re.I)
+MEDIA_URL_RE = re.compile(r"https://[^\s]+?\.(?:mp4|mov|webm)(?:\?[^\s]*)?", re.I)
 ANY_URL_RE = re.compile(r"https://[^\s]+")
+AUTH_RE = re.compile(r"session expired|not authenticated|please log in|unauthorized", re.I)
+
+# Enums accepted by seedance_2_5 (`higgsfield model get seedance_2_5`).
+ASPECTS = ("auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16")
+RESOLUTIONS = ("480p", "720p")
 
 
 def die(msg: str, code: int = 1) -> None:
@@ -41,25 +49,38 @@ def require_auth(hf: str) -> None:
             text=True,
             timeout=60,
         )
+    except subprocess.TimeoutExpired:
+        die("higgsfield account status timed out after 60s. Check your network, then retry.")
     except OSError as exc:
         die(f"could not run higgsfield: {exc}")
-    out = (proc.stdout or "") + (proc.stderr or "")
-    if proc.returncode != 0 or re.search(
-        r"session expired|not authenticated|please log in", out, re.I
-    ):
+    out = ((proc.stdout or "") + (proc.stderr or "")).strip()
+    if proc.returncode == 0 and not AUTH_RE.search(out):
+        return
+    if AUTH_RE.search(out):
         die("not logged in. Run: higgsfield auth login")
+    die(f"higgsfield account status failed (exit {proc.returncode}):\n{out or '(no output)'}")
 
 
 def load_prompt(args: argparse.Namespace) -> str:
     if args.prompt_file:
-        path = Path(args.prompt_file)
+        if args.world:
+            die("--world only fills the built-in skeleton. Drop --world, or drop --prompt-file.")
+        path = Path(args.prompt_file).expanduser()
         if not path.is_file():
             die(f"prompt file not found: {path}")
-        return path.read_text(encoding="utf-8").strip()
+        text = path.read_text(encoding="utf-8").strip()
+        if not text:
+            die(f"prompt file is empty: {path}")
+        if WORLD_TOKEN in text:
+            die(
+                f"prompt file still contains the {WORLD_TOKEN} placeholder: {path}\n"
+                "Name a real place there, or drop --prompt-file and pass --world instead."
+            )
+        return text
     if not SKELETON_PATH.is_file():
         die(f"skeleton missing: {SKELETON_PATH}")
     world = (args.world or DEFAULT_WORLD).strip()
-    return SKELETON_PATH.read_text(encoding="utf-8").format(world=world).strip()
+    return SKELETON_PATH.read_text(encoding="utf-8").replace(WORLD_TOKEN, world).strip()
 
 
 def run_job(hf: str, image: Path, prompt: str, args: argparse.Namespace) -> str:
@@ -87,24 +108,77 @@ def run_job(hf: str, image: Path, prompt: str, args: argparse.Namespace) -> str:
         "5s",
     ]
     print("submitting Seedance 2.5 job…", file=sys.stderr)
-    proc = subprocess.run(cmd, input=prompt, text=True, capture_output=True)
-    text = (proc.stdout or "") + "\n" + (proc.stderr or "")
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+    except OSError as exc:
+        die(f"could not run higgsfield: {exc}")
+
+    # The CLI reads the prompt from stdin when no --prompt flag is given. Feed it
+    # from a thread so a prompt larger than the pipe buffer cannot deadlock us.
+    def feed() -> None:
+        try:
+            proc.stdin.write(prompt)
+            proc.stdin.close()
+        except (OSError, ValueError):
+            pass
+
+    writer = threading.Thread(target=feed, daemon=True)
+    writer.start()
+
+    # Relay the CLI's progress live; the wait can run for many minutes.
+    chunks = []
+    for line in proc.stdout:
+        sys.stderr.write(line)
+        sys.stderr.flush()
+        chunks.append(line)
+    writer.join(timeout=5)
+    proc.stdin.close()
+    proc.stdout.close()
+    proc.wait()
+
+    text = "".join(chunks)
     if proc.returncode != 0:
         die(text.strip() or f"higgsfield exited {proc.returncode}")
-    match = URL_RE.search(text) or ANY_URL_RE.search(text)
+    match = MEDIA_URL_RE.search(text)
     if not match:
-        print(text.strip())
-        die("job finished but no result URL was printed")
+        other = ANY_URL_RE.search(text)
+        hint = f"\nlast URL printed: {other.group(0).rstrip(').,]')}" if other else ""
+        die(f"job finished but printed no video URL.{hint}")
     url = match.group(0).rstrip(").,]")
     print(url)
     return url
 
 
+def unique_dest(dest_dir: Path, stem: str) -> Path:
+    """Never clobber an earlier take — Seedance has no seed, so it is unrepeatable."""
+    dest = dest_dir / f"{stem}_mse.mp4"
+    n = 2
+    while dest.exists():
+        dest = dest_dir / f"{stem}_mse-{n}.mp4"
+        n += 1
+    return dest
+
+
 def download(url: str, dest_dir: Path, stem: str) -> Path:
     dest_dir.mkdir(parents=True, exist_ok=True)
-    dest = dest_dir / f"{stem}_mse.mp4"
+    dest = unique_dest(dest_dir, stem)
     print(f"saving {dest}", file=sys.stderr)
-    urllib.request.urlretrieve(url, dest)
+    try:
+        with urllib.request.urlopen(url, timeout=120) as resp:
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+            if "html" in ctype or "json" in ctype:
+                die(f"expected a video, got {ctype} from {url}")
+            with dest.open("wb") as fh:
+                shutil.copyfileobj(resp, fh)
+    except urllib.error.URLError as exc:
+        die(f"download failed: {exc}")
     return dest
 
 
@@ -119,13 +193,18 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     p.add_argument(
         "--world",
-        help='Physical setting when using the skeleton, e.g. "dusty farm at golden hour"',
+        help='Physical setting for the skeleton, e.g. "dusty farm at golden hour". '
+        "Not valid with --prompt-file.",
     )
     p.add_argument("--out", default=".", help="Directory to save the mp4 (default: cwd)")
-    p.add_argument("--aspect", default="21:9", help="Aspect ratio (default: 21:9)")
-    p.add_argument("--resolution", default="720p", help="Resolution (default: 720p)")
+    p.add_argument(
+        "--aspect", default="21:9", choices=ASPECTS, help="Aspect ratio (default: 21:9)"
+    )
+    p.add_argument(
+        "--resolution", default="720p", choices=RESOLUTIONS, help="Resolution (default: 720p)"
+    )
     p.add_argument("--duration", type=int, default=15, help="Seconds (default: 15)")
-    p.add_argument("--wait-timeout", default="20m", help="Higgsfield wait timeout")
+    p.add_argument("--wait-timeout", default="20m", help="Higgsfield wait timeout (default: 20m)")
     p.add_argument(
         "--no-download",
         action="store_true",
@@ -136,6 +215,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str]) -> None:
     args = parse_args(argv)
+    if args.duration < 1:
+        die(f"--duration must be at least 1 second, got {args.duration}")
     image = Path(args.image).expanduser().resolve()
     if not image.is_file():
         die(f"image not found: {image}")

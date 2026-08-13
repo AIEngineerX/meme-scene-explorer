@@ -1,0 +1,33 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows carries the junction handling in install.py, so it is not optional.
+        # ubuntu/3.9 pins the floor the README claims.
+        include:
+          - os: ubuntu-latest
+            python: "3.9"
+          - os: ubuntu-latest
+            python: "3.13"
+          - os: macos-latest
+            python: "3.13"
+          - os: windows-latest
+            python: "3.13"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      # No dependencies to install — both scripts are standard library only.
+      # The live Higgsfield tests skip themselves when the CLI is absent, which
+      # it always is here; they run locally for anyone who is logged in.
+      - run: python -m unittest discover -s tests -v

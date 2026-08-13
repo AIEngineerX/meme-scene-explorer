@@ -32,18 +32,47 @@ def die(msg: str, code: int = 1) -> None:
     raise SystemExit(code)
 
 
-def link_or_copy(src: Path, dest: Path) -> str:
+def is_link(path: Path) -> bool:
+    """True for symlinks and for Windows junctions, which are not symlinks to Python."""
+    if path.is_symlink():
+        return True
+    if os.name == "nt":
+        try:
+            return bool(os.readlink(path))
+        except (OSError, ValueError):
+            return False
+    return False
+
+
+def points_at(dest: Path, src: Path) -> bool:
+    try:
+        return dest.resolve() == src.resolve()
+    except OSError:
+        return False
+
+
+def remove(path: Path) -> None:
+    try:
+        path.unlink()
+        return
+    except OSError:
+        pass
+    shutil.rmtree(path)
+
+
+def link_or_copy(src: Path, dest: Path, force: bool = False) -> str:
+    """Point dest at src. Returns what was done, or why it was left alone."""
+    if dest == src or src in dest.parents:
+        return "self"
+    # lexists, not exists: a junction left behind by a clone that has since moved
+    # is dangling, so exists() and is_symlink() are both False for it.
+    if os.path.lexists(dest):
+        if points_at(dest, src):
+            return "already"
+        if not is_link(dest) and not force:
+            return "exists"
+        remove(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.exists() or dest.is_symlink():
-        try:
-            if dest.resolve() == src.resolve():
-                return "already"
-        except OSError:
-            pass
-        try:
-            dest.unlink()
-        except OSError:
-            shutil.rmtree(dest)
     if os.name == "nt":
         try:
             import _winapi
@@ -80,33 +109,46 @@ def main(argv: list[str]) -> None:
         default=str(Path.home()),
         help="Home directory to scan for agent skill folders",
     )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace an existing meme-scene-explorer directory (deletes what is there)",
+    )
     args = p.parse_args(argv)
 
     if not (ROOT / "SKILL.md").is_file():
         die(f"SKILL.md missing in {ROOT}")
 
     home = Path(args.home).expanduser()
-    installed = []
+    results = []
 
     for rel, always in HOME_TARGETS:
         parent = home / rel
         if not always and not parent.parent.exists():
             continue
         dest = parent / NAME
-        kind = link_or_copy(ROOT, dest)
-        installed.append((dest, kind))
+        results.append((dest, link_or_copy(ROOT, dest, args.force)))
 
     if args.project is not None:
-        dest = project_target(Path(args.project).expanduser().resolve())
-        kind = link_or_copy(ROOT, dest)
-        installed.append((dest, kind))
-
-    if not installed:
-        die("no agent skill directories found")
+        project = Path(args.project).expanduser().resolve()
+        if project == ROOT or ROOT in project.parents:
+            die(
+                "--project points at the skill itself, which would nest the repo inside "
+                "its own .agents/skills.\nPass the path of the app you want to vendor it into."
+            )
+        dest = project_target(project)
+        results.append((dest, link_or_copy(ROOT, dest, args.force)))
 
     print(f"skill: {ROOT}")
-    for dest, kind in installed:
-        print(f"  {kind:8} {dest}")
+    for dest, kind in results:
+        print(f"  {kind:9} {dest}")
+
+    if any(kind == "exists" for _, kind in results):
+        print(
+            "\nSome targets already hold a different meme-scene-explorer directory and were "
+            "left alone.\nRe-run with --force to replace them — that deletes those directories.",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":

@@ -4,17 +4,26 @@ Method published by [Alex Patrascu (@maxescu)](https://x.com/maxescu/status/2087
 
 ## What is locked
 
+Not overridable — `scripts/explore.py` always sends these:
+
 - Model: `seedance_2_5`
 - Mode: `omni_reference`
 - Media: the meme still as the only `--image-references` item
-- Duration: `15`
-- Aspect: `21:9` (closest Higgsfield enum to Alexa 2.39:1)
-- Resolution: `720p`
 - Audio: `--generate_audio true` (diegetic only)
+
+## Defaults you can override
+
+`explore.py` exposes these as flags. The method assumes the values below; changing one puts you outside this contract:
+
+- Duration: `15` (`--duration`)
+- Aspect: `21:9` (`--aspect`) — closest Higgsfield enum to Alexa 2.39:1
+- Resolution: `720p` (`--resolution`)
+
+The accepted values come from `higgsfield model get seedance_2_5` and are enforced by the script before anything is submitted.
 
 ## What is not locked
 
-Seedance has no seed. Same image + same prompt will not render identical pixels. The contract makes the *method* repeatable.
+Seedance has no seed. Same image + same prompt will not render identical pixels. The contract makes the *method* repeatable. Because a take cannot be reproduced, `explore.py` never overwrites an existing `.mp4`.
 
 ## Rules the prompt must contain
 
@@ -31,7 +40,9 @@ Seedance has no seed. Same image + same prompt will not render identical pixels.
 
 ## CLI skeleton
 
-Used by `scripts/explore.py` when no `--prompt-file` is passed. The live text is `examples/skeleton.txt`. `{world}` is replaced by `--world`.
+Used by `scripts/explore.py` when no `--prompt-file` is passed. The live text is `examples/skeleton.txt`. The literal token `{world}` is replaced by `--world`; every other character is sent verbatim, so braces elsewhere in the file are safe.
+
+`--world` fills the skeleton only. Passing it alongside `--prompt-file` is an error, and sending the raw skeleton as a `--prompt-file` is rejected while `{world}` is still in it — otherwise a paid job would be staged in a place literally named `{world}`.
 
 ## Agent path (higher quality)
 

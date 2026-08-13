@@ -10,9 +10,9 @@ Seedance has no seed. The same image and prompt will not produce identical pixel
 
 ## Requirements
 
-- A [Higgsfield](https://higgsfield.ai) account with credits (Seedance 2.5 is paid)
+- A [Higgsfield](https://higgsfield.ai) account with credits. Seedance 2.5 is paid: one 15s 720p run costs **~97.5 credits** (5s costs 32.5). Check with `higgsfield generate cost seedance_2_5 --duration 15 --resolution 720p`.
 - The [Higgsfield CLI](https://github.com/higgsfield-ai/cli)
-- Python 3.9+ (standard library only)
+- Python 3.9+ (standard library only). Commands below use `python3`; on Windows use `python`.
 - One meme image (`.jpg`, `.png`, or `.webp`)
 
 ```bash
@@ -26,41 +26,51 @@ higgsfield auth login
 git clone https://github.com/AIEngineerX/meme-scene-explorer.git
 cd meme-scene-explorer
 
-python scripts/explore.py path/to/meme.jpg --out ~/Videos
+python3 scripts/explore.py path/to/meme.jpg --out ~/Videos --world "a dusty farm at golden hour"
 ```
 
-That sends a generic 15-stage skeleton. Seedance reads the still and fills the beats.
+That fills the bundled 15-stage skeleton with your world. Seedance reads the still and fills the beats.
 
 For a better film, write stages from the actual details in the still (see `examples/filled-prompt.puppy.txt` for the shape), then:
 
 ```bash
-python scripts/explore.py path/to/meme.jpg \
+python3 scripts/explore.py path/to/meme.jpg \
   --prompt-file path/to/your-stages.txt \
   --out ~/Videos
 ```
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `--prompt-file` | `examples/skeleton.txt` | Your filled 15-stage prompt |
-| `--world` | a matching real place | Setting used by the skeleton |
+| `--prompt-file` | none — the skeleton is used | Your filled 15-stage prompt. Not valid with `--world`. |
+| `--world` | a matching real place | Setting written into the skeleton. Ignored — and rejected — if `--prompt-file` is given. |
 | `--out` | current directory | Where the `.mp4` is saved |
+| `--duration` | `15` | Seconds. The contract assumes 15. |
 | `--aspect` | `21:9` | Closest Higgsfield value to Alexa 2.39:1 |
 | `--resolution` | `720p` | `480p` or `720p` |
+| `--wait-timeout` | `20m` | How long to wait for the job |
 | `--no-download` | off | Print the result URL only |
+
+`--duration`, `--aspect`, and `--resolution` are overrides. The [prompt contract](references/prompt-contract.md) assumes the defaults; changing them changes the method.
+
+Output is never overwritten. A second run on the same still writes `meme_mse-2.mp4`, because Seedance has no seed and the first take cannot be reproduced.
 
 ## Use with a coding agent
 
 ```bash
-python scripts/install.py
+python3 scripts/install.py
 ```
 
-That links this folder into every skills directory already on the machine (`~/.agents/skills`, `~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, `~/.gemini/skills`, `~/.grok/skills`, and others if present).
+That links this folder into every skills directory already on the machine (`~/.agents/skills`, `~/.claude/skills`, `~/.codex/skills`, `~/.cursor/skills`, `~/.gemini/skills`, `~/.grok/skills`, and others if present). It is safe to re-run, including after you move the clone.
+
+A target that already holds a *different* `meme-scene-explorer` directory is reported and left alone. Pass `--force` to replace it — that deletes what is there.
 
 To vendor it into another project:
 
 ```bash
-python scripts/install.py --project /path/to/your/app
+python3 scripts/install.py --project /path/to/your/app
 ```
+
+Point `--project` at the app you want to vendor into, not at this clone.
 
 Then attach a still and say **explore this meme**. Agents should follow `AGENTS.md` and generate only through `scripts/explore.py`.
 
@@ -95,7 +105,16 @@ references/prompt-contract.md     locked flags and prompt rules
 examples/skeleton.txt             default prompt (used when you pass no --prompt-file)
 examples/filled-prompt.puppy.txt  one worked 15-stage prompt (shape only)
 agents/openai.yaml                Codex discovery stub
+tests/                            unittest suite
 ```
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+No mocks. The suite drives both scripts for real, and — when the Higgsfield CLI is installed and logged in — validates the locked param set against the live API via `generate cost`, which creates no job and spends no credits. Those two tests skip cleanly when the CLI is absent.
 
 ## What not to do
 

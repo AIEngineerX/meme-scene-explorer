@@ -9,14 +9,14 @@ description: >
 license: MIT
 compatibility: >
   Any coding agent that can read a still and run a shell command.
-  Requires Higgsfield CLI (`higgsfield`) logged in, Python 3.9+,
-  and a local meme image. Do not call host-specific image/video
-  generators.
+  Requires Higgsfield CLI (`higgsfield`) logged in, Python 3.9+
+  (`python3` on macOS/Linux, `python` on Windows), and a local meme
+  image. Do not call host-specific image/video generators.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   openclaw:
     requires:
-      bins: ["python", "higgsfield"]
+      bins: ["higgsfield"]
 ---
 
 # Meme Scene Explorer
@@ -49,11 +49,13 @@ This skill is runtime-neutral. Use the bundled script. Do not call the host agen
 1. **Read the still** with the host's file/image viewer. Write a short extract: appearance, clothes/markings, exact pose, expression, composition, meaning.
 2. **Choose one real place** that heightens that meaning. One world for all 15 seconds.
 3. **Write 15 subject-specific stages** to a temp `.txt` file. Stage 1 = ECU of the defining detail. Stages 2–14 = real details on this subject, then the world. Stage 15 = snap back to the original meme framing. Follow `references/prompt-contract.md`. Use `examples/filled-prompt.puppy.txt` as the shape, not the content.
-4. **Run the bundled script** (cwd = this skill directory, or pass absolute paths):
+4. **Run the bundled script** (cwd = this skill directory, or pass absolute paths). Use `python3` on macOS/Linux, `python` on Windows:
 
 ```bash
-python scripts/explore.py /absolute/path/to/meme.jpg --prompt-file /absolute/path/to/filled.txt --out ~/Videos
+python3 scripts/explore.py /absolute/path/to/meme.jpg --prompt-file /absolute/path/to/filled.txt --out ~/Videos
 ```
+
+   One 15s 720p run costs about **97.5 Higgsfield credits**. Say so before spending the user's balance.
 
 5. **Deliver** the printed URL and the saved `.mp4` path. Open the file only if the user asks.
 
@@ -74,3 +76,4 @@ If `explore.py` cannot run, stop. Do not substitute another generator.
 - `examples/filled-prompt.puppy.txt` — one worked 15-stage prompt
 - `scripts/explore.py` — the generate runner
 - `scripts/install.py` — copy/link this skill into every local agent
+- `tests/` — `python3 -m unittest discover -s tests`
