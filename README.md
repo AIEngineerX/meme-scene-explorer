@@ -153,7 +153,7 @@ Every number on this page comes from real completed runs on Seedance 2.5, not fr
 
 The locked flags are checked against `higgsfield model get seedance_2_5` by the test suite, so a change on Higgsfield's side fails CI rather than a paid job.
 
-Verified against Higgsfield CLI **1.1.20 and 1.1.23** (latest as of 2026-08-13): identical `seedance_2_5` parameters, same price, and the prompt still arrives over stdin. Install the latest.
+Verified on Higgsfield CLI **1.1.23** (latest, released 2026-08-08) and on 1.1.20 before it: identical `seedance_2_5` parameters, same 97.5-credit price, and the prompt still arrives over stdin with no `--prompt` flag. The full suite — including the tests that query the live API — passes against 1.1.23. Install the latest.
 
 **Why a CLI and not an MCP server:** there is no official Higgsfield MCP server as of 2026-08-13. `@higgsfield/cli` is the actively maintained surface — the third-party `higgsfield-mcp` package is several months behind it. Higgsfield also publish `@higgsfield/client` (a Node SDK) and `@higgsfield/cloud-cli` (API-key auth, aimed at headless agents); if you need to run this without an interactive `auth login`, that is where to look.
 
