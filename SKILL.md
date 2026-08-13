@@ -31,9 +31,10 @@ This skill is runtime-neutral. Use the bundled script. Do not call the host agen
 
 ## Bootstrap
 
-1. If `higgsfield` is missing from PATH: ask the user to install https://github.com/higgsfield-ai/cli then `higgsfield auth login`.
+1. If `higgsfield` is missing from PATH: ask the user to run `npm install -g @higgsfield/cli` (macOS, Linux, Windows), then `higgsfield auth login`.
 2. If `higgsfield account status` fails: ask the user to run `higgsfield auth login` and wait.
 3. Stop if there is no local meme still. Do not invent a subject.
+4. A 15s 720p run costs ~97.5 credits. `explore.py` prices it and refuses to submit if the balance is short — relay that message rather than retrying.
 
 ## Hard rules
 

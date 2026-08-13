@@ -157,8 +157,11 @@ class RequireAuth(unittest.TestCase):
     def standin(self, out: str, code: int) -> str:
         return make_standin(self.tmp, f"import sys\nprint({out!r})\nsys.exit({code})\n")
 
-    def test_logged_in_passes(self) -> None:
-        explore.require_auth(self.standin("you@example.com — starter plan, 109 credits", 0))
+    def test_logged_in_returns_the_status_line(self) -> None:
+        out = explore.require_auth(
+            self.standin("you@example.com - starter plan, 109 credits", 0)
+        )
+        self.assertIn("109 credits", out)
 
     def test_expired_session_says_log_in(self) -> None:
         err = io.StringIO()
@@ -175,6 +178,49 @@ class RequireAuth(unittest.TestCase):
                 explore.require_auth(self.standin("dial tcp: connection refused", 1))
         self.assertIn("connection refused", err.getvalue())
         self.assertNotIn("auth login", err.getvalue())
+
+
+class Budget(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.args = explore.parse_args(["m.jpg"])
+
+    def costs(self, out: str, code: int = 0) -> str:
+        return make_standin(self.tmp, f"import sys\nprint({out!r})\nsys.exit({code})\n")
+
+    def test_parses_both_cli_number_formats(self) -> None:
+        self.assertEqual(explore.parse_credits("97.5 credits"), 97.5)
+        self.assertEqual(explore.parse_credits("me@x.com - starter plan, 109 credits"), 109.0)
+        self.assertEqual(explore.parse_credits("1,250 credits"), 1250.0)
+        self.assertIsNone(explore.parse_credits("unlimited plan"))
+        self.assertIsNone(explore.parse_credits(""))
+
+    def test_reports_the_price_when_affordable(self) -> None:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            explore.check_budget(self.costs("97.5 credits"), "p", self.args, "109 credits")
+        self.assertIn("97.5 credits", err.getvalue())
+        self.assertIn("balance 109", err.getvalue())
+
+    def test_refuses_to_submit_when_the_balance_is_short(self) -> None:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(SystemExit):
+                explore.check_budget(self.costs("97.5 credits"), "p", self.args, "40 credits")
+        self.assertIn("needs about 97.5", err.getvalue())
+
+    def test_unreadable_numbers_never_block_the_run(self) -> None:
+        """A CLI output change must not stop a user who can actually pay."""
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            explore.check_budget(self.costs("some new format"), "p", self.args, "109 credits")
+            explore.check_budget(self.costs("97.5 credits"), "p", self.args, "enterprise plan")
+        self.assertIn("97.5 credits", err.getvalue())
+
+    def test_a_failing_cost_call_never_blocks_the_run(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            explore.check_budget(self.costs("boom", 1), "p", self.args, "109 credits")
 
 
 class RunJob(unittest.TestCase):
@@ -226,6 +272,15 @@ class RunJob(unittest.TestCase):
                 explore.run_job(hf, Path("m.jpg"), "p", explore.parse_args(["m.jpg"]))
         self.assertIn("no video URL", err.getvalue())
         self.assertIn("https://higgsfield.ai/dashboard/jobs/abc", err.getvalue())
+        self.assertIn("higgsfield generate list", err.getvalue())
+
+    def test_failure_after_submission_tells_you_how_to_recover(self) -> None:
+        hf = self.standin("boom", code=2)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                explore.run_job(hf, Path("m.jpg"), "p", explore.parse_args(["m.jpg"]))
+        self.assertIn("higgsfield generate list", err.getvalue())
 
     def test_large_prompt_does_not_deadlock(self) -> None:
         """A prompt bigger than the OS pipe buffer must not hang the writer."""

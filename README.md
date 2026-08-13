@@ -15,10 +15,20 @@ Seedance has no seed. The same image and prompt will not produce identical pixel
 - Python 3.9+ (standard library only). Commands below use `python3`; on Windows use `python`.
 - One meme image (`.jpg`, `.png`, or `.webp`)
 
+Install the CLI. This works on macOS, Linux, and Windows:
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh
+npm install -g @higgsfield/cli
 higgsfield auth login
 ```
+
+On macOS or Linux you can use the shell installer instead:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh
+```
+
+`explore.py` prices every run against your balance before it submits, and stops if you cannot cover it.
 
 ## Run
 

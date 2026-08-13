@@ -20,6 +20,10 @@ DEFAULT_WORLD = "a complete believable physical location that matches and elevat
 MEDIA_URL_RE = re.compile(r"https://[^\s]+?\.(?:mp4|mov|webm)(?:\?[^\s]*)?", re.I)
 ANY_URL_RE = re.compile(r"https://[^\s]+")
 AUTH_RE = re.compile(r"session expired|not authenticated|please log in|unauthorized", re.I)
+CREDITS_RE = re.compile(r"([\d,]+(?:\.\d+)?)\s*credits", re.I)
+RECOVERY_HINT = (
+    "If the job was submitted it may still be running — find it with: higgsfield generate list"
+)
 
 # Enums accepted by seedance_2_5 (`higgsfield model get seedance_2_5`).
 ASPECTS = ("auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16")
@@ -35,13 +39,16 @@ def require_higgsfield() -> str:
     path = shutil.which("higgsfield")
     if not path:
         die(
-            "higgsfield CLI not found. Install:\n"
-            "  curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh"
+            "higgsfield CLI not found. Install it (macOS, Linux, Windows):\n"
+            "  npm install -g @higgsfield/cli\n"
+            "Then log in:\n"
+            "  higgsfield auth login"
         )
     return path
 
 
-def require_auth(hf: str) -> None:
+def require_auth(hf: str) -> str:
+    """Returns the `account status` output so the caller can read the balance."""
     try:
         proc = subprocess.run(
             [hf, "account", "status"],
@@ -55,10 +62,65 @@ def require_auth(hf: str) -> None:
         die(f"could not run higgsfield: {exc}")
     out = ((proc.stdout or "") + (proc.stderr or "")).strip()
     if proc.returncode == 0 and not AUTH_RE.search(out):
-        return
+        return out
     if AUTH_RE.search(out):
         die("not logged in. Run: higgsfield auth login")
     die(f"higgsfield account status failed (exit {proc.returncode}):\n{out or '(no output)'}")
+
+
+def parse_credits(text: str) -> float | None:
+    match = CREDITS_RE.search(text or "")
+    if not match:
+        return None
+    try:
+        return float(match.group(1).replace(",", ""))
+    except ValueError:
+        return None
+
+
+def estimate_cost(hf: str, prompt: str, args: argparse.Namespace) -> float | None:
+    """Price this run. `generate cost` creates no job and spends nothing.
+
+    Media does not affect the price, so the still is not uploaded just to ask.
+    """
+    cmd = [
+        hf,
+        "generate",
+        "cost",
+        "seedance_2_5",
+        "--duration",
+        str(args.duration),
+        "--aspect_ratio",
+        args.aspect,
+        "--resolution",
+        args.resolution,
+        "--generate_audio",
+        "true",
+    ]
+    try:
+        proc = subprocess.run(cmd, input=prompt, text=True, capture_output=True, timeout=90)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return parse_credits(proc.stdout)
+
+
+def check_budget(hf: str, prompt: str, args: argparse.Namespace, status: str) -> None:
+    """Say what the run costs before spending it. Silent if the numbers cannot be read."""
+    cost = estimate_cost(hf, prompt, args)
+    if cost is None:
+        return
+    balance = parse_credits(status)
+    if balance is None:
+        print(f"this run costs about {cost:g} credits", file=sys.stderr)
+        return
+    if balance < cost:
+        die(
+            f"this run needs about {cost:g} credits and the account has {balance:g}. "
+            "Add credits at https://higgsfield.ai, then retry."
+        )
+    print(f"this run costs about {cost:g} credits (balance {balance:g})", file=sys.stderr)
 
 
 def load_prompt(args: argparse.Namespace) -> str:
@@ -145,12 +207,13 @@ def run_job(hf: str, image: Path, prompt: str, args: argparse.Namespace) -> str:
 
     text = "".join(chunks)
     if proc.returncode != 0:
-        die(text.strip() or f"higgsfield exited {proc.returncode}")
+        detail = text.strip() or f"higgsfield exited {proc.returncode}"
+        die(f"{detail}\n{RECOVERY_HINT}")
     match = MEDIA_URL_RE.search(text)
     if not match:
         other = ANY_URL_RE.search(text)
         hint = f"\nlast URL printed: {other.group(0).rstrip(').,]')}" if other else ""
-        die(f"job finished but printed no video URL.{hint}")
+        die(f"job finished but printed no video URL.{hint}\n{RECOVERY_HINT}")
     url = match.group(0).rstrip(").,]")
     print(url)
     return url
@@ -221,8 +284,9 @@ def main(argv: list[str]) -> None:
     if not image.is_file():
         die(f"image not found: {image}")
     hf = require_higgsfield()
-    require_auth(hf)
+    status = require_auth(hf)
     prompt = load_prompt(args)
+    check_budget(hf, prompt, args, status)
     url = run_job(hf, image, prompt, args)
     if not args.no_download:
         dest = download(url, Path(args.out).expanduser(), image.stem)
