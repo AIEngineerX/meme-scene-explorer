@@ -21,6 +21,9 @@ MEDIA_URL_RE = re.compile(r"https://[^\s]+?\.(?:mp4|mov|webm)(?:\?[^\s]*)?", re.
 ANY_URL_RE = re.compile(r"https://[^\s]+")
 AUTH_RE = re.compile(r"session expired|not authenticated|please log in|unauthorized", re.I)
 CREDITS_RE = re.compile(r"([\d,]+(?:\.\d+)?)\s*credits", re.I)
+STAGE_RE = re.compile(r"\[Stage\b", re.I)
+SOUND_RE = re.compile(r"^<[^<>]+>$")
+MIN_PROMPT_CHARS = 500
 RECOVERY_HINT = (
     "If the job was submitted it may still be running — find it with: higgsfield generate list"
 )
@@ -123,6 +126,26 @@ def check_budget(hf: str, prompt: str, args: argparse.Namespace, status: str) ->
     print(f"this run costs about {cost:g} credits (balance {balance:g})", file=sys.stderr)
 
 
+def lint_prompt(text: str) -> list[str]:
+    """The machine-checkable rules from references/prompt-contract.md.
+
+    Only for filled prompts. The skeleton carries four [Stage] markers on purpose —
+    it asks the model to write the fifteen rather than enumerating them.
+    """
+    problems = []
+    stages = len(STAGE_RE.findall(text))
+    if stages != 15:
+        problems.append(f"has {stages} [Stage N] markers; the contract wants exactly 15")
+    lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
+    if not lines or not SOUND_RE.match(lines[-1]):
+        problems.append("does not end with a <diegetic sound bed in angle brackets>")
+    if len(text) < MIN_PROMPT_CHARS:
+        problems.append(
+            f"is {len(text)} characters; a filled 15-stage prompt runs several thousand"
+        )
+    return problems
+
+
 def load_prompt(args: argparse.Namespace) -> str:
     if args.prompt_file:
         if args.world:
@@ -138,6 +161,15 @@ def load_prompt(args: argparse.Namespace) -> str:
                 f"prompt file still contains the {WORLD_TOKEN} placeholder: {path}\n"
                 "Name a real place there, or drop --prompt-file and pass --world instead."
             )
+        if not args.skip_lint:
+            problems = lint_prompt(text)
+            if problems:
+                joined = "\n".join(f"  - the prompt {p}" for p in problems)
+                die(
+                    f"{path} does not match the prompt contract:\n{joined}\n"
+                    "A run costs real credits, so this stops before submitting. "
+                    "See references/prompt-contract.md, or pass --skip-lint to send it anyway."
+                )
         return text
     if not SKELETON_PATH.is_file():
         die(f"skeleton missing: {SKELETON_PATH}")
@@ -268,6 +300,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     p.add_argument("--duration", type=int, default=15, help="Seconds (default: 15)")
     p.add_argument("--wait-timeout", default="20m", help="Higgsfield wait timeout (default: 20m)")
+    p.add_argument(
+        "--skip-lint",
+        action="store_true",
+        help="Send a --prompt-file that fails the contract check anyway",
+    )
     p.add_argument(
         "--no-download",
         action="store_true",

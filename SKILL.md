@@ -51,7 +51,7 @@ This skill is runtime-neutral. Use the bundled script. Do not call the host agen
 
 1. **Read the still** with the host's file/image viewer. Write a short extract: appearance, clothes/markings, exact pose, expression, composition, meaning.
 2. **Choose one real place** that heightens that meaning. One world for all 15 seconds.
-3. **Write 15 subject-specific stages** to a temp `.txt` file. Stage 1 = ECU of the defining detail. Stages 2–14 = real details on this subject, then the world. Stage 15 = snap back to the original meme framing. Follow `references/prompt-contract.md`. Use `examples/filled-prompt.puppy.txt` as the shape, not the content.
+3. **Write 15 subject-specific stages** to a temp `.txt` file. Stage 1 = ECU of the defining detail. Stages 2–14 = real details on this subject, then the world. Stage 15 = snap back to the original meme framing. Close with a `<diegetic sound bed>`. Follow `references/prompt-contract.md`. Use `examples/filled-prompt.puppy.txt` (held subject, farmyard) or `examples/filled-prompt.dog.txt` (standing subject, street) as the shape, not the content. The script rejects a prompt file that is not exactly 15 stages, so count them before you run.
 4. **Run the bundled script** (cwd = this skill directory, or pass absolute paths). Use `python3` on macOS/Linux, `python` on Windows:
 
 ```bash
@@ -76,7 +76,8 @@ If `explore.py` cannot run, stop. Do not substitute another generator.
 ## Additional resources
 
 - `references/prompt-contract.md` — locked flags + skeleton
-- `examples/filled-prompt.puppy.txt` — one worked 15-stage prompt
+- `examples/filled-prompt.puppy.txt` — worked prompt, held subject in a farmyard
+- `examples/filled-prompt.dog.txt` — worked prompt, standing subject on a street
 - `scripts/explore.py` — the generate runner
 - `scripts/install.py` — copy/link this skill into every local agent
 - `tests/` — `python3 -m unittest discover -s tests`

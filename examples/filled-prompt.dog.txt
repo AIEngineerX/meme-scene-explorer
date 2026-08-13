@@ -1,0 +1,39 @@
+meme_reference corresponds to the attached reference image. Use it as the sole semantic and visual evidence for the subject. The character must remain the exact same being: an anthropomorphic tan-brown dog with a long black snout, small half-lidded dark eyes, a slight unbothered smirk, wearing a light grey crewneck sweater, light blue jeans, and red sneakers with white laces, standing relaxed with both hands in his pockets. Keep that exact face, snout, clothes, slouch, and "just a chill guy" expression in every frame.
+
+Re-stage those exact elements on a quiet real city sidewalk at late golden hour: warm low sun, brick storefronts, a few parked cars, trees throwing long shadows, everyday street life happening around him while he does not move. Elevate the world, never replace the character. Do not show the original flat green background, the uploaded JPEG, screenshots, borders, captions, watermarks, website UI, typography, or compression artifacts.
+
+Technical base: Arri Alexa 65, anamorphic 2.39:1, 35mm Kodak 5219, fine grain, hyper-realistic, no music, diegetic sound only. The subject stays almost completely frozen. Only the camera moves.
+
+[Stage 1] 0-1s. Initial state: the character from meme_reference stands perfectly still on the sidewalk, locked in the iconic hands-in-pockets slouch. Primary event: extreme close-up on one half-lidded eye and the slight smirk at the corner of the mouth. End state: hyper-detailed view of that unbothered expression.
+
+[Stage 2] 1-2s. Continue. Frozen. Primary event: camera pulls back to both small dark eyes and the calm stare. End state: symmetric close-up of the gaze.
+
+[Stage 3] 2-3s. Continue. Frozen. Primary event: pull back to the full face and the long black snout in profile-front. End state: complete head filling the frame.
+
+[Stage 4] 3-4s. Continue. Frozen. Primary event: tilt down to the light grey crewneck sweater, fabric folds and knit. End state: sweater texture sharp.
+
+[Stage 5] 4-5s. Continue. Frozen. Primary event: camera finds both hands buried in the front pockets of the light blue jeans. End state: pockets and hands in focus.
+
+[Stage 6] 5-6s. Continue. Frozen. Primary event: tilt down to the red sneakers with white laces, planted on the sidewalk. End state: both shoes sharp.
+
+[Stage 7] 6-7s. Continue. Frozen. Primary event: pull back to a medium full-body of the locked slouch, centered on the sidewalk. End state: complete iconic pose.
+
+[Stage 8] 7-8s. Continue. Frozen. Primary event: orbit 45 degrees to the right to the side profile, the long black snout in silhouette against the sun. End state: profile of the chill stance.
+
+[Stage 9] 8-9s. Continue. Frozen. Primary event: focus pulls from the character to the golden-hour street behind: brick, trees, parked cars. End state: environment sharp, subject soft in the foreground.
+
+[Stage 10] 9-10s. Continue. Frozen. Primary event: wide establishing shot from down the block, the tiny still figure in the lower third. End state: environmental master.
+
+[Stage 11] 10-11s. Continue. Frozen. Primary event: low angle from the sidewalk looking up at the unbothered face against sky. End state: heroic low chill.
+
+[Stage 12] 11-12s. Continue. Frozen. Primary event: lateral track left to right around the frozen figure, passing a tree or signpost. End state: dynamic move around the static subject.
+
+[Stage 13] 12-13s. Continue. Frozen. Primary event: extreme close-up of a rounded ear and tan fur texture. End state: micro-detail of the ear.
+
+[Stage 14] 13-14s. Continue. Frozen. Primary event: medium three-quarter view, still hands in pockets, same smirk. End state: three-quarter master.
+
+[Stage 15] 14-15s. Continue. Frozen. Primary event: camera snaps back to a perfectly centered, steady frontal composition matching the original meme_reference framing: standing to camera, hands in pockets, slight slouch, face on. End state: iconic final frame.
+
+Keep identity, sweater, jeans, red sneakers, pocketed hands, smirk, and the golden-hour sidewalk 100 percent consistent across all 15 stages.
+
+<quiet late-day street: distant traffic, a light breeze, one far bird, fabric hush>

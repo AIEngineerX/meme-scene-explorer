@@ -22,7 +22,7 @@ import explore  # noqa: E402
 
 
 def ns(**kw) -> argparse.Namespace:
-    base = dict(prompt_file=None, world=None)
+    base = dict(prompt_file=None, world=None, skip_lint=False)
     base.update(kw)
     return argparse.Namespace(**base)
 
@@ -73,7 +73,9 @@ class LoadPrompt(unittest.TestCase):
     def test_prompt_file_is_used_verbatim(self) -> None:
         f = self.tmp / "filled.txt"
         f.write_text("stage one, stage two", encoding="utf-8")
-        self.assertEqual(explore.load_prompt(ns(prompt_file=str(f))), "stage one, stage two")
+        self.assertEqual(
+            explore.load_prompt(ns(prompt_file=str(f), skip_lint=True)), "stage one, stage two"
+        )
 
     def test_world_with_prompt_file_is_rejected(self) -> None:
         f = self.tmp / "filled.txt"
@@ -95,6 +97,60 @@ class LoadPrompt(unittest.TestCase):
     def test_missing_prompt_file_is_rejected(self) -> None:
         with self.assertRaises(SystemExit):
             explore.load_prompt(ns(prompt_file=str(self.tmp / "nope.txt")))
+
+
+class PromptLint(unittest.TestCase):
+    """A bad prompt costs ~97.5 credits to discover at the API. Catch it locally."""
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+
+    def worked_examples(self):
+        return sorted((ROOT / "examples").glob("filled-prompt.*.txt"))
+
+    def test_every_bundled_example_passes(self) -> None:
+        """The shipped examples are the shape users copy — they must be valid."""
+        found = self.worked_examples()
+        self.assertTrue(found, "no worked examples found to check")
+        for path in found:
+            with self.subTest(example=path.name):
+                self.assertEqual(lint := explore.lint_prompt(path.read_text(encoding="utf-8")), [], lint)
+
+    def test_skeleton_is_not_held_to_the_15_marker_rule(self) -> None:
+        """It asks the model for 15 stages rather than enumerating them, so it is exempt."""
+        skeleton = explore.SKELETON_PATH.read_text(encoding="utf-8")
+        self.assertLess(len(explore.STAGE_RE.findall(skeleton)), 15)
+        self.assertEqual(explore.load_prompt(ns(world="a farm")).count("{world}"), 0)
+
+    def test_wrong_stage_count_is_caught(self) -> None:
+        text = "\n".join(f"[Stage {i}] a beat." for i in range(1, 13))
+        self.assertIn("12 [Stage N] markers", " ".join(explore.lint_prompt(text)))
+
+    def test_missing_sound_bed_is_caught(self) -> None:
+        text = "\n".join(f"[Stage {i}] a beat." for i in range(1, 16))
+        self.assertIn("diegetic sound bed", " ".join(explore.lint_prompt(text)))
+
+    def test_a_valid_prompt_has_no_complaints(self) -> None:
+        body = "\n".join(f"[Stage {i}] a beat with real detail on this subject." for i in range(1, 16))
+        text = body + "\n" * 2 + "x" * 500 + "\n<quiet wind over dry grass>"
+        self.assertEqual(explore.lint_prompt(text), [])
+
+    def test_load_prompt_refuses_a_bad_file_and_names_the_override(self) -> None:
+        f = self.tmp / "short.txt"
+        f.write_text("[Stage 1] only one beat.\n<wind>", encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            with self.assertRaises(SystemExit):
+                explore.load_prompt(ns(prompt_file=str(f)))
+        self.assertIn("--skip-lint", err.getvalue())
+
+    def test_skip_lint_sends_it_anyway(self) -> None:
+        f = self.tmp / "short.txt"
+        f.write_text("[Stage 1] only one beat.\n<wind>", encoding="utf-8")
+        self.assertIn(
+            "[Stage 1]", explore.load_prompt(ns(prompt_file=str(f), skip_lint=True))
+        )
 
 
 class UrlExtraction(unittest.TestCase):

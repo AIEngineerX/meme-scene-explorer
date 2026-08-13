@@ -48,4 +48,10 @@ Used by `scripts/explore.py` when no `--prompt-file` is passed. The live text is
 
 Do not send the skeleton raw. Read the still first. Write the 15 stages as Maxescu did for the smug-guy meme: name the actual details (finger-on-temple, gold watch, leather collar, shop-window reflection). Then send that filled prompt with the still as `omni_reference`.
 
-A worked filled prompt is in `examples/filled-prompt.puppy.txt`.
+Two worked prompts are bundled, deliberately different in subject and staging: `examples/filled-prompt.puppy.txt` (a held subject in a farmyard) and `examples/filled-prompt.dog.txt` (a standing subject on a street, the run that produced the frames in the README).
+
+## What the script enforces
+
+Rules 6, 7 and 10 are machine-checkable, and a run costs real credits, so `explore.py` checks any `--prompt-file` before submitting: exactly 15 `[Stage N]` markers, a closing `<sound bed>` in angle brackets, and a plausible length. `--skip-lint` overrides it. The skeleton is exempt — it instructs the model to write fifteen stages rather than enumerating them, so it carries only four markers by design.
+
+The remaining rules are judgment, not syntax. Nothing can check that your beats name details which actually exist on *this* subject.

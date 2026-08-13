@@ -72,7 +72,7 @@ python3 scripts/explore.py path/to/meme.jpg --out ~/Videos --world "a dusty farm
 
 That fills the bundled 15-stage skeleton with your world. Seedance reads the still and fills the beats.
 
-For a better film, write stages from the actual details in the still (see `examples/filled-prompt.puppy.txt` for the shape), then:
+For a better film, write stages from the actual details in the still. Two worked prompts are bundled to copy the shape from — [`filled-prompt.puppy.txt`](examples/filled-prompt.puppy.txt) and [`filled-prompt.dog.txt`](examples/filled-prompt.dog.txt), the one that produced the frames at the top of this page. Then:
 
 ```bash
 python3 scripts/explore.py path/to/meme.jpg \
@@ -89,7 +89,10 @@ python3 scripts/explore.py path/to/meme.jpg \
 | `--aspect` | `21:9` | Closest Higgsfield value to Alexa 2.39:1 |
 | `--resolution` | `720p` | `480p` or `720p`. A quality tier, not a line count — at 21:9, `720p` delivers 1470×630. |
 | `--wait-timeout` | `20m` | How long to wait for the job |
+| `--skip-lint` | off | Send a `--prompt-file` that fails the contract check anyway |
 | `--no-download` | off | Print the result URL only |
+
+Your `--prompt-file` is checked against the contract before anything is submitted — exactly 15 `[Stage N]` markers, a closing `<diegetic sound bed>`, and a plausible length. A run costs real credits, so a prompt that is short by three stages should fail on your machine, not on the invoice. `--skip-lint` overrides it.
 
 `--duration`, `--aspect`, and `--resolution` are overrides. The [prompt contract](references/prompt-contract.md) assumes the defaults; changing them changes the method.
 
@@ -160,7 +163,8 @@ scripts/explore.py                generate a video
 scripts/install.py                install the skill for local agents
 references/prompt-contract.md     locked flags and prompt rules
 examples/skeleton.txt             default prompt (used when you pass no --prompt-file)
-examples/filled-prompt.puppy.txt  one worked 15-stage prompt (shape only)
+examples/filled-prompt.puppy.txt  worked 15-stage prompt — held subject, farmyard
+examples/filled-prompt.dog.txt    worked 15-stage prompt — standing subject, street
 examples/example-frames.jpg       six frames from a real run
 agents/openai.yaml                Codex discovery stub
 tests/                            unittest suite
@@ -173,6 +177,24 @@ python3 -m unittest discover -s tests
 ```
 
 No mocks. The suite drives both scripts for real, and — when the Higgsfield CLI is installed and logged in — validates the locked param set against the live API via `generate cost`, which creates no job and spends no credits. Those two tests skip cleanly when the CLI is absent.
+
+## Troubleshooting
+
+Every message below is one the script actually prints. It stops before spending credits in all of these cases except the last two.
+
+| What you see | What to do |
+|---|---|
+| `higgsfield CLI not found` | `npm install -g @higgsfield/cli` — works on Windows too, unlike the shell installer |
+| `not logged in. Run: higgsfield auth login` | Log in. The session does expire. |
+| `higgsfield account status failed (exit N)` | Not an auth problem — the CLI's own output follows the colon. Usually network or a Higgsfield outage. |
+| `this run needs about 97.5 credits and the account has 11.5` | Top up. One 15s 720p run costs ~97.5, so a starter plan covers one. |
+| `... does not match the prompt contract` | Your `--prompt-file` is missing stages or the closing sound bed. Fix it, or `--skip-lint`. |
+| `prompt file still contains the {world} placeholder` | You passed the skeleton as `--prompt-file`. Either fill it in, or drop `--prompt-file` and use `--world`. |
+| `--world only fills the built-in skeleton` | Pick one: a written prompt file, or the skeleton plus a world. |
+| `image not found` | Give a real path to a local `.jpg`, `.png`, or `.webp`. |
+| `python: command not found` | Use `python3` on macOS and Linux. |
+| `job finished but printed no video URL` | Credits are already spent. `higgsfield generate list` shows the job and its URL. |
+| Nothing printed for minutes | Normal. A 15s job takes a few minutes; the CLI's progress is relayed live. |
 
 ## What not to do
 
